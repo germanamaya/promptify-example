@@ -40,7 +40,7 @@ export class PrismaCategoryRepository implements CategoryRepository {
         async (tx) => {
           const category = await tx.category.findUnique({ where: { id } });
           if (!category) return "not_found" as const;
-          if ((await tx.prompt.count({ where: { categoryId: id } })) > 0) return "has_prompts" as const;
+          if ((await tx.promptCategory.count({ where: { categoryId: id } })) > 0) return "has_prompts" as const;
           await tx.category.delete({ where: { id } });
           return "deleted" as const;
         },

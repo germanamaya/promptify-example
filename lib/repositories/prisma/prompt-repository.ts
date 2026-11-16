@@ -1,11 +1,13 @@
 import "server-only";
-import { NotFoundError } from "@/lib/errors";
+import { ConflictError, NotFoundError } from "@/lib/errors";
 import type { PromptListCriteria, PromptData, PromptRecord, PromptRepository } from "@/lib/repositories/types";
 import type { PrismaClient } from "./client";
 import { mapPrismaError } from "./errors";
 
 const include = {
-  category: { select: { id: true, name: true, color: true } },
+  promptCategories: {
+    include: { category: { select: { id: true, name: true, color: true } } },
+  },
   author: { select: { oid: true, displayName: true } },
 } as const;
 
@@ -16,7 +18,7 @@ type PromptRow = {
   description: string | null;
   createdAt: Date;
   updatedAt: Date;
-  category: PromptRecord["category"];
+  promptCategories: { category: PromptRecord["categories"][number] }[];
   author: PromptRecord["author"];
 };
 
@@ -28,7 +30,7 @@ function toRecord(row: PromptRow): PromptRecord {
     description: row.description,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-    category: row.category,
+    categories: row.promptCategories.map(({ category }) => category).sort((a, b) => a.name.localeCompare(b.name)),
     author: row.author,
   };
 }
@@ -40,7 +42,7 @@ export class PrismaPromptRepository implements PromptRepository {
     // Prisma parameterizes the value but SQL Server still interprets LIKE wildcards.
     const search = q?.replace(/[%_\[]/g, (character) => `[${character}]`);
     const where = {
-      ...(categoryId ? { categoryId } : {}),
+      ...(categoryId ? { promptCategories: { some: { categoryId } } } : {}),
       ...(q ? {
         OR: [
           { title: { contains: search } },
@@ -74,14 +76,20 @@ export class PrismaPromptRepository implements PromptRepository {
           title: data.title,
           content: data.content,
           description: data.description ?? null,
-          categoryId: data.categoryId,
           authorOid: data.authorOid,
+          promptCategories: {
+            create: data.categoryIds.map((categoryId) => ({
+              category: { connect: { id: categoryId } },
+            })),
+          },
         },
         include,
       });
       return toRecord(row);
     } catch (error) {
-      throw mapPrismaError(error);
+      const mapped = mapPrismaError(error);
+      if (mapped instanceof NotFoundError) throw new ConflictError("The change conflicts with existing data");
+      throw mapped;
     }
   }
 
@@ -93,14 +101,23 @@ export class PrismaPromptRepository implements PromptRepository {
           title: data.title,
           content: data.content,
           description: data.description ?? null,
-          categoryId: data.categoryId,
+          promptCategories: {
+            deleteMany: {},
+            create: data.categoryIds.map((categoryId) => ({
+              category: { connect: { id: categoryId } },
+            })),
+          },
         },
         include,
       });
       return toRecord(row);
     } catch (error) {
       const mapped = mapPrismaError(error);
-      if (mapped instanceof NotFoundError) return null;
+      if (mapped instanceof NotFoundError) {
+        const prompt = await this.client.prompt.findUnique({ where: { id }, select: { id: true } });
+        if (!prompt) return null;
+        throw new ConflictError("The change conflicts with existing data");
+      }
       throw mapped;
     }
   }

@@ -25,14 +25,14 @@ export class PromptService {
   }
 
   async create(user: CurrentUser, input: PromptInput) {
-    await this.requireCategory(input.categoryId);
+    await this.requireCategories(input.categoryIds);
     return this.deps.prompts.create({ ...toPromptData(input), authorOid: user.oid });
   }
 
   async update(user: CurrentUser, id: string, input: PromptInput) {
     const existing = await this.get(user, id);
     if (existing.author.oid !== user.oid) throw new ForbiddenError();
-    await this.requireCategory(input.categoryId);
+    await this.requireCategories(input.categoryIds);
     const updated = await this.deps.prompts.update(id, toPromptData(input));
     if (!updated) throw new NotFoundError("Prompt not found");
     return updated;
@@ -42,6 +42,11 @@ export class PromptService {
     const existing = await this.get(user, id);
     if (existing.author.oid !== user.oid && !user.isAdministrator) throw new ForbiddenError();
     await this.deps.prompts.delete(id);
+  }
+
+  private async requireCategories(categoryIds: string[]) {
+    if (!categoryIds.length) throw new ValidationError("At least one Category is required");
+    await Promise.all(categoryIds.map((categoryId) => this.requireCategory(categoryId)));
   }
 
   private async requireCategory(categoryId: string) {
@@ -54,6 +59,6 @@ function toPromptData(input: PromptInput): PromptData {
     title: input.title,
     content: input.content,
     description: input.description,
-    categoryId: input.categoryId,
+    categoryIds: input.categoryIds,
   };
 }

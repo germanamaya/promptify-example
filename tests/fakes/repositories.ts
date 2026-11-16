@@ -17,7 +17,7 @@ type StoredPrompt = {
   title: string;
   content: string;
   description: string | null;
-  categoryId: string;
+  categoryIds: string[];
   authorOid: string;
   createdAt: Date;
   updatedAt: Date;
@@ -41,8 +41,13 @@ export class FakeDb {
     return record;
   }
 
-  seedPrompt(data: Partial<StoredPrompt> & { categoryId: string; authorOid: string }): StoredPrompt {
+  seedPrompt(data: Partial<Omit<StoredPrompt, "categoryIds">> & {
+    categoryId?: string;
+    categoryIds?: string[];
+    authorOid: string;
+  }): StoredPrompt {
     const now = this.clock();
+    const { categoryId, categoryIds, ...rest } = data;
     const record: StoredPrompt = {
       id: randomUUID(),
       title: "Title",
@@ -50,17 +55,18 @@ export class FakeDb {
       description: null,
       createdAt: now,
       updatedAt: now,
-      ...data,
+      categoryIds: categoryIds ?? (categoryId ? [categoryId] : []),
+      ...rest,
     };
     this.prompts.set(record.id, record);
     return record;
   }
 
   toRecord(stored: StoredPrompt): PromptRecord {
-    const { categoryId, authorOid, ...rest } = stored;
+    const { categoryIds, authorOid, ...rest } = stored;
     return {
       ...rest,
-      category: this.categories.get(categoryId)!,
+      categories: categoryIds.map((id) => this.categories.get(id)!).sort((a, b) => a.name.localeCompare(b.name)),
       author: { oid: authorOid, displayName: this.users.get(authorOid)!.displayName },
     };
   }
@@ -93,7 +99,7 @@ export class FakeCategoryRepository implements CategoryRepository {
 
   async delete(id: string) {
     if (!this.db.categories.has(id)) return "not_found" as const;
-    const inUse = [...this.db.prompts.values()].some((prompt) => prompt.categoryId === id);
+    const inUse = [...this.db.prompts.values()].some((prompt) => prompt.categoryIds.includes(id));
     if (inUse) return "has_prompts" as const;
     this.db.categories.delete(id);
     return "deleted" as const;
@@ -113,7 +119,7 @@ export class FakePromptRepository implements PromptRepository {
 
   async list({ categoryId, q, offset, limit }: PromptListCriteria) {
     const matching = [...this.db.prompts.values()]
-      .filter((prompt) => !categoryId || prompt.categoryId === categoryId)
+      .filter((prompt) => !categoryId || prompt.categoryIds.includes(categoryId))
       .filter((prompt) => !q || [prompt.title, prompt.description, prompt.content]
         .some((value) => value?.toLowerCase().includes(q.toLowerCase())))
       .sort(
@@ -131,16 +137,16 @@ export class FakePromptRepository implements PromptRepository {
     return stored ? this.db.toRecord(stored) : null;
   }
 
-  async create(data: { title: string; content: string; description?: string; categoryId: string; authorOid: string }) {
-    if (!this.db.categories.has(data.categoryId) || !this.db.users.has(data.authorOid)) throw new ConflictError();
+  async create(data: { title: string; content: string; description?: string; categoryIds: string[]; authorOid: string }) {
+    if (!data.categoryIds.every((id) => this.db.categories.has(id)) || !this.db.users.has(data.authorOid)) throw new ConflictError();
     const stored = this.db.seedPrompt({ ...data, description: data.description ?? null });
     return this.db.toRecord(stored);
   }
 
-  async update(id: string, data: { title: string; content: string; description?: string; categoryId: string }) {
+  async update(id: string, data: { title: string; content: string; description?: string; categoryIds: string[] }) {
     const existing = this.db.prompts.get(id);
     if (!existing) return null;
-    if (!this.db.categories.has(data.categoryId)) throw new ConflictError();
+    if (!data.categoryIds.every((categoryId) => this.db.categories.has(categoryId))) throw new ConflictError();
     const updated = {
       ...existing,
       ...data,

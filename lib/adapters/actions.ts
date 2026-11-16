@@ -2,13 +2,14 @@ import "server-only";
 import { categoryInputSchema } from "@/lib/schemas/category";
 import { idSchema, oidSchema } from "@/lib/schemas/common";
 import { promptInputSchema } from "@/lib/schemas/prompt";
+import { ValidationError } from "@/lib/errors";
 import type { AdministratorService } from "@/lib/services/administrator-service";
 import type { CategoryService } from "@/lib/services/category-service";
 import type { PromptService } from "@/lib/services/prompt-service";
 import { parseInput, readFormFields } from "./parse";
 import type { ActionRunner } from "./run-action";
 
-const PROMPT_FIELDS = ["title", "content", "description", "categoryId"] as const;
+const PROMPT_FIELDS = ["title", "content", "description"] as const;
 const CATEGORY_FIELDS = ["name", "color"] as const;
 
 export function createActions(deps: {
@@ -25,7 +26,13 @@ export function createActions(deps: {
     return value;
   };
 
-  const parsePromptForm = (form: unknown) => parseInput(promptInputSchema, readFormFields(form, PROMPT_FIELDS));
+  const parsePromptForm = (form: unknown) => {
+    if (!(form instanceof FormData)) throw new ValidationError("Invalid input");
+    const fields = readFormFields(form, PROMPT_FIELDS);
+    const categoryIds = form.getAll("categoryIds");
+    if (categoryIds.some((id) => typeof id !== "string")) throw new ValidationError("Invalid input");
+    return parseInput(promptInputSchema, { ...fields, categoryIds });
+  };
   const parseCategoryForm = (form: unknown) => parseInput(categoryInputSchema, readFormFields(form, CATEGORY_FIELDS));
 
   return {

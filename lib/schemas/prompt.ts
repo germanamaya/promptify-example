@@ -5,7 +5,7 @@ export const promptInputSchema = z.object({
   title: z.string().trim().min(1).max(120),
   content: z.string().min(1).max(10_000).refine((value) => value.trim().length > 0),
   description: z.string().trim().max(500).optional(),
-  categoryId: idSchema,
+  categoryIds: z.array(idSchema).min(1).refine((ids) => new Set(ids).size === ids.length),
 });
 
 export const promptListQuerySchema = paginationSchema.extend({

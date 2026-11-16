@@ -122,14 +122,20 @@ export function Library({ me, categories, prompts, q, categoryId }: {
             </div>}
             {items.length > 0 ? (
               <div className="prompt-list">
-                <div className="list-columns" aria-hidden="true"><span>Prompt</span><span>Categoría</span><span>Autor</span><span>Compartido</span></div>
+                <div className="list-columns" aria-hidden="true"><span>Prompt</span><span>Categorías</span><span>Autor</span><span>Compartido</span></div>
                 {items.map((prompt) => (
                   <article key={prompt.id} className="prompt-row">
                     <div className="prompt-summary">
                       <h3><Link scroll={false} href={`/prompts/${prompt.id}?from=${encodeURIComponent(origin)}`}>{prompt.title}</Link></h3>
                       {prompt.description && <p className="prompt-description">{prompt.description}</p>}
                     </div>
-                    <span className="category-badge"><span className="category-dot" style={{ backgroundColor: prompt.category.color }} />{prompt.category.name}</span>
+                    <div className="category-badges">
+                      {prompt.categories.map((category) => (
+                        <span className="category-badge" key={category.name}>
+                          <span className="category-dot" style={{ backgroundColor: category.color }} />{category.name}
+                        </span>
+                      ))}
+                    </div>
                     <span className="author-name">{prompt.authorName}</span>
                     <time dateTime={prompt.createdAt}>{new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(prompt.createdAt))}</time>
                   </article>

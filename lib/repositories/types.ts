@@ -19,7 +19,7 @@ export type PromptRecord = {
   description: string | null;
   createdAt: Date;
   updatedAt: Date;
-  category: CategoryRecord;
+  categories: CategoryRecord[];
   author: { oid: string; displayName: string };
 };
 
@@ -27,7 +27,7 @@ export type PromptData = {
   title: string;
   content: string;
   description?: string;
-  categoryId: string;
+  categoryIds: string[];
 };
 
 export type PromptListCriteria = {

@@ -18,7 +18,10 @@ const prompt = {
   id: "b0000000-0000-4000-8000-000000000002",
   title: "Analiza un informe <script>alert(1)</script>",
   description: "Convierte los datos en decisiones.",
-  category: { name: "Análisis", color: "#123456" },
+  categories: [
+    { name: "Análisis", color: "#123456" },
+    { name: "Marketing", color: "#654321" },
+  ],
   authorName: "Ada",
   createdAt: "2026-11-10T12:00:00.000Z",
 };
@@ -50,6 +53,8 @@ describe("Promptify home", () => {
     expect(html).toContain("Promptify");
     expect(html).toContain("Biblioteca");
     expect(html).toContain("Convierte los datos");
+    expect(html).toContain("Marketing");
+    expect(html).toContain("Análisis");
     expect(html).toContain("Ada");
     expect(html).toContain(`/prompts/${prompt.id}`);
     expect(html).toContain("&lt;script&gt;");

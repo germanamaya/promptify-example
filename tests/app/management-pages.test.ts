@@ -20,7 +20,7 @@ describe("Management pages", () => {
     ] });
     queries.getPrompt.mockResolvedValue({ ok: true, data: {
       id: "id", title: "Título existente", description: "Descripción existente", content: "<b>Texto literal</b>",
-      categoryId: "cat", canEdit: true, canDelete: true,
+      categoryIds: ["cat"], categories: [{ name: "Análisis", color: "#123456" }], canEdit: true, canDelete: true,
     } });
   });
 

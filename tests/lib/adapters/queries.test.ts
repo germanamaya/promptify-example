@@ -54,10 +54,27 @@ describe("queries", () => {
 
     expect(result).toMatchObject({ ok: true, data: { total: 1, page: 1, pageSize: 20 } });
     const [item] = (result as { data: { items: Record<string, unknown>[] } }).data.items;
-    expect(item).toMatchObject({ title: "Hello", authorName: "Bob", category: { name: "General", color: "#112233" } });
+    expect(item).toMatchObject({ title: "Hello", authorName: "Bob", categories: [{ name: "General", color: "#112233" }] });
     expect(JSON.stringify(item)).not.toContain(bob.oid);
     expect(item).not.toHaveProperty("content");
     expect(item).not.toHaveProperty("authorOid");
+  });
+
+  it("returns all associated Categories in the Prompt list DTO", async () => {
+    const secondCategory = repos.db.seedCategory({ name: "Other", color: "#445566" });
+    await repos.prompts.create({
+      title: "Multi-category",
+      content: "Body",
+      categoryIds: [categoryId, secondCategory.id],
+      authorOid: bob.oid,
+    } as never);
+
+    const result = await queries.listPrompts({});
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: { items: [{ categories: [{ name: "General" }, { name: "Other" }] }] },
+    });
   });
 
   it("validates pagination and filters from raw search params", async () => {

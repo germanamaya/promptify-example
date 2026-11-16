@@ -17,13 +17,30 @@ async function setup() {
 }
 
 describe("prompts", () => {
-  it("creates a Prompt and returns it with its Category and Author", async () => {
+  it("persists and filters by every associated Category", async () => {
+    const { author, category } = await setup();
+    const secondCategory = await seedCategory(client, { name: "Other" });
+
+    const created = await db.prompts.create({
+      title: "Multi-category",
+      content: "Body",
+      categoryIds: [category.id, secondCategory.id],
+      authorOid: author.oid,
+    });
+
+    expect(created.categories.map(({ id }) => id)).toEqual([category.id, secondCategory.id]);
+    expect((await db.prompts.findById(created.id))?.categories.map(({ id }) => id)).toEqual([category.id, secondCategory.id]);
+    expect((await db.prompts.list({ categoryId: secondCategory.id, offset: 0, limit: 20 })).items).toHaveLength(1);
+    expect(await db.categories.delete(secondCategory.id)).toBe("has_prompts");
+  });
+
+  it("creates a Prompt and returns it with its Categories and Author", async () => {
     const { author, category } = await setup();
 
     const created = await db.prompts.create({
       title: "Title",
       content: "Body",
-      categoryId: category.id,
+      categoryIds: [category.id],
       authorOid: author.oid,
     });
 
@@ -31,7 +48,7 @@ describe("prompts", () => {
       title: "Title",
       content: "Body",
       description: null,
-      category: { id: category.id, name: "General", color: "#112233" },
+      categories: [{ id: category.id, name: "General", color: "#112233" }],
       author: { oid: author.oid, displayName: "Ada" },
     });
     expect(await db.prompts.findById(created.id)).toEqual(created);
@@ -46,7 +63,7 @@ describe("prompts", () => {
       title: "Ünïcode ✓",
       content,
       description: "d".repeat(500),
-      categoryId: category.id,
+      categoryIds: [category.id],
       authorOid: author.oid,
     });
 
@@ -61,10 +78,10 @@ describe("prompts", () => {
     const { author, category } = await setup();
     const data = { title: "T", content: "C" };
 
-    await expect(db.prompts.create({ ...data, categoryId: missing, authorOid: author.oid })).rejects.toBeInstanceOf(
+    await expect(db.prompts.create({ ...data, categoryIds: [missing], authorOid: author.oid })).rejects.toBeInstanceOf(
       ConflictError,
     );
-    await expect(db.prompts.create({ ...data, categoryId: category.id, authorOid: missing })).rejects.toBeInstanceOf(
+    await expect(db.prompts.create({ ...data, categoryIds: [category.id], authorOid: missing })).rejects.toBeInstanceOf(
       ConflictError,
     );
     expect(await client.prompt.count()).toBe(0);
@@ -81,9 +98,9 @@ describe("prompts", () => {
       updatedAt: past,
     });
 
-    const updated = await db.prompts.update(created.id, { title: "New", content: "New", categoryId: other.id });
+    const updated = await db.prompts.update(created.id, { title: "New", content: "New", categoryIds: [other.id] });
 
-    expect(updated).toMatchObject({ title: "New", category: { id: other.id }, author: { oid: author.oid } });
+    expect(updated).toMatchObject({ title: "New", categories: [{ id: other.id }], author: { oid: author.oid } });
     expect(updated!.updatedAt.getTime()).toBeGreaterThan(past.getTime());
     expect(updated!.createdAt).toEqual(past);
   });
@@ -92,9 +109,9 @@ describe("prompts", () => {
     const { author, category } = await setup();
     const created = await seedPrompt(client, { categoryId: category.id, authorOid: author.oid });
 
-    expect(await db.prompts.update(missing, { title: "x", content: "x", categoryId: category.id })).toBeNull();
+    expect(await db.prompts.update(missing, { title: "x", content: "x", categoryIds: [category.id] })).toBeNull();
     await expect(
-      db.prompts.update(created.id, { title: "x", content: "x", categoryId: missing }),
+      db.prompts.update(created.id, { title: "x", content: "x", categoryIds: [missing] }),
     ).rejects.toBeInstanceOf(ConflictError);
   });
 

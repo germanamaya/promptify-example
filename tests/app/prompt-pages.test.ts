@@ -15,7 +15,7 @@ describe("Prompt supporting flows", () => {
     queries.listCategories.mockResolvedValue({ ok: true, data: [{ id: "cat", name: "Análisis", color: "#123456" }] });
     queries.getPrompt.mockResolvedValue({
       ok: true,
-      data: { id: "id", title: "Un Prompt", content: "<b>Texto literal</b>\nSegunda línea", description: null, categoryId: "cat", category: { name: "Análisis", color: "#123456" }, authorName: "Ada", createdAt: "2026-11-10T12:00:00Z", updatedAt: "2026-11-10T12:00:00Z", canEdit: false, canDelete: false },
+      data: { id: "id", title: "Un Prompt", content: "<b>Texto literal</b>\nSegunda línea", description: null, categoryIds: ["cat"], categories: [{ name: "Análisis", color: "#123456" }], authorName: "Ada", createdAt: "2026-11-10T12:00:00Z", updatedAt: "2026-11-10T12:00:00Z", canEdit: false, canDelete: false },
     });
   });
 
@@ -27,6 +27,25 @@ describe("Prompt supporting flows", () => {
     expect(html).not.toContain("<b>Texto literal</b>");
     expect(html).not.toContain("Editar Prompt");
     expect(html).not.toContain("Eliminar Prompt");
+  });
+
+  it("renders every Category on the Prompt detail", async () => {
+    const result = await queries.getPrompt();
+    queries.getPrompt.mockResolvedValue({
+      ...result,
+      data: {
+        ...result.data,
+        categories: [
+          { name: "Análisis", color: "#123456" },
+          { name: "Marketing", color: "#654321" },
+        ],
+      },
+    });
+
+    const html = renderToStaticMarkup(await Detail({ params: Promise.resolve({ id: "id" }) }));
+
+    expect(html).toContain("Análisis");
+    expect(html).toContain("Marketing");
   });
 
   it("exposes edit and delete for the Author and preserves the return location", async () => {
@@ -71,9 +90,10 @@ describe("Prompt supporting flows", () => {
 
   it("renders the creation fields and sensitive-data warning", async () => {
     const html = renderToStaticMarkup(await NewPrompt());
-    for (const field of ["title", "description", "categoryId", "content"]) {
+    for (const field of ["title", "description", "categoryIds", "content"]) {
       expect(html).toContain(`name="${field}"`);
     }
+    expect(html).toContain('type="checkbox"');
     expect(html).toContain("secretos");
     expect(html).toContain("datos personales");
     expect(html).toContain("Publicar Prompt");

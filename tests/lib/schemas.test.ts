@@ -47,11 +47,20 @@ describe("paginationSchema", () => {
 });
 
 describe("promptInputSchema", () => {
-  const valid = { title: "Title", content: "Content", categoryId: uuid };
+  const valid = { title: "Title", content: "Content", categoryIds: [uuid] };
 
-  it("accepts a minimal Prompt and an optional description", () => {
+  it("accepts one or more Categories and an optional description", () => {
     expect(promptInputSchema.safeParse(valid).success).toBe(true);
+    expect(promptInputSchema.safeParse({ ...valid, categoryIds: [uuid, "00000000-0000-4000-8000-000000000001"] }).success).toBe(true);
     expect(promptInputSchema.safeParse({ ...valid, description: "About" }).success).toBe(true);
+  });
+
+  it.each<[string[]]>([
+    [[]],
+    [["abc"]],
+    [[uuid, uuid]],
+  ])("rejects invalid Category selections %o", (categoryIds) => {
+    expect(promptInputSchema.safeParse({ ...valid, categoryIds }).success).toBe(false);
   });
 
   it("enforces length limits", () => {
@@ -67,7 +76,6 @@ describe("promptInputSchema", () => {
 
   it("rejects a blank title and a non-uuid category", () => {
     expect(promptInputSchema.safeParse({ ...valid, title: "   " }).success).toBe(false);
-    expect(promptInputSchema.safeParse({ ...valid, categoryId: "abc" }).success).toBe(false);
   });
 
   it("never lets authorOid, createdAt or updatedAt through", () => {
@@ -77,7 +85,7 @@ describe("promptInputSchema", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    expect(Object.keys(parsed).sort()).toEqual(["categoryId", "content", "title"]);
+    expect(Object.keys(parsed).sort()).toEqual(["categoryIds", "content", "title"]);
   });
 });
 

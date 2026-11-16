@@ -17,7 +17,7 @@ Prompts, with genuine text search to find relevant material.
 
 ## Capabilities and Constraints
 
-- Every Prompt has one Author and exactly one Category.
+- Every Prompt has one Author and belongs to one or more Categories.
 - Categories have names and colors and are maintained by Administrators.
 - All Prompts are visible to all authenticated Users; there are no private Prompts.
 - The backend lists newest first with Category filtering and pagination.

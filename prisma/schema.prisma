@@ -15,26 +15,34 @@ model User {
 }
 
 model Category {
-  id      String   @id @default(uuid()) @db.NVarChar(36)
-  name    String   @unique @db.NVarChar(50)
-  color   String   @db.Char(7)
-  prompts Prompt[]
+  id              String           @id @default(uuid()) @db.NVarChar(36)
+  name            String           @unique @db.NVarChar(50)
+  color           String           @db.Char(7)
+  promptCategories PromptCategory[]
 }
 
 model Prompt {
-  id          String   @id @default(uuid()) @db.NVarChar(36)
-  title       String   @db.NVarChar(120)
-  content     String   @db.NVarChar(Max)
-  description String?  @db.NVarChar(500)
-  categoryId  String   @db.NVarChar(36)
-  authorOid   String   @db.NVarChar(36)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String           @id @default(uuid()) @db.NVarChar(36)
+  title           String           @db.NVarChar(120)
+  content         String           @db.NVarChar(Max)
+  description     String?          @db.NVarChar(500)
+  authorOid       String           @db.NVarChar(36)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  promptCategories PromptCategory[]
 
-  // SQL Server has no RESTRICT: NO ACTION rejects deleting a Category or User that still has Prompts.
-  category Category @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  author   User     @relation(fields: [authorOid], references: [oid], onDelete: NoAction, onUpdate: NoAction)
+  // SQL Server NO ACTION rejects deleting a User that still has Prompts.
+  author User @relation(fields: [authorOid], references: [oid], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([createdAt(sort: Desc), id(sort: Desc)])
-  @@index([categoryId, createdAt(sort: Desc), id(sort: Desc)])
+}
+
+model PromptCategory {
+  promptId   String   @db.NVarChar(36)
+  categoryId String  @db.NVarChar(36)
+  prompt     Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([promptId, categoryId])
+  @@index([categoryId, promptId])
 }

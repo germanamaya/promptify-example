@@ -17,7 +17,7 @@ describe("URL-backed Prompt modals", () => {
     queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada" } });
     queries.getPrompt.mockResolvedValue({ ok: true, data: {
       id: "id", title: "Un Prompt", content: "<b>Texto literal</b>", description: "Descripción",
-      categoryId: "cat", category: { name: "Análisis", color: "#123456" }, authorName: "Ada",
+      categoryIds: ["cat"], categories: [{ name: "Análisis", color: "#123456" }], authorName: "Ada",
       createdAt: "2026-11-10T12:00:00Z", canEdit: true, canDelete: true,
     } });
     queries.listCategories.mockResolvedValue({ ok: true, data: [{ id: "cat", name: "Análisis", color: "#123456" }] });
@@ -93,6 +93,8 @@ describe("URL-backed Prompt modals", () => {
     expect(html).toContain('value="Un Prompt"');
     expect(html).toContain("&lt;b&gt;Texto literal&lt;/b&gt;");
     expect(html).toContain("Guardar cambios");
+    expect(html).toContain('name="categoryIds"');
+    expect(html).toContain('name="categoryIds" checked="" value="cat"');
     expect(html).toContain('/prompts/id?from=%2F%3Fq%3Dinforme%26categoryId%3Dcat%26page%3D2');
     expect(html).not.toContain('class="supporting-page"');
   });

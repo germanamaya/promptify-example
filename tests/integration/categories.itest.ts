@@ -105,11 +105,11 @@ describe("category delete", () => {
 
       const [deletion, creation] = await Promise.allSettled([
         categoryService.delete(administrator, category.id),
-        promptService.create(author, { title: "T", content: "C", categoryId: category.id }),
+        promptService.create(author, { title: "T", content: "C", categoryIds: [category.id] }),
       ]);
 
       const categoryExists = (await client.category.count({ where: { id: category.id } })) === 1;
-      const promptCount = await client.prompt.count({ where: { categoryId: category.id } });
+      const promptCount = await client.promptCategory.count({ where: { categoryId: category.id } });
 
       expect(categoryExists || promptCount === 0, `round ${round}: orphan Prompt`).toBe(true);
       if (deletion.status === "fulfilled") {

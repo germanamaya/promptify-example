@@ -62,7 +62,7 @@ describe("actions", () => {
     it("rejects a missing principal without touching the database", async () => {
       principal = new UnauthenticatedError();
 
-      const result = await actions.createPrompt(form({ title: "T", content: "C", categoryId }));
+      const result = await actions.createPrompt(form({ title: "T", content: "C", categoryIds: categoryId }));
 
       expect(result).toEqual({ ok: false, error: "Authentication required" });
       expect(repos.db.users.has(ada.oid)).toBe(false);
@@ -71,13 +71,20 @@ describe("actions", () => {
     it("answers a non-member with a forbidden message", async () => {
       principal = new ForbiddenError();
 
-      const result = await actions.createPrompt(form({ title: "T", content: "C", categoryId }));
+      const result = await actions.createPrompt(form({ title: "T", content: "C", categoryIds: categoryId }));
 
       expect(result).toEqual({ ok: false, error: "You are not allowed to do this" });
     });
 
     it("validates input before the User is upserted", async () => {
-      const result = await actions.createPrompt(form({ title: "", content: "C", categoryId }));
+      const result = await actions.createPrompt(form({ title: "", content: "C", categoryIds: categoryId }));
+
+      expect(result).toEqual({ ok: false, error: "Invalid input" });
+      expect(repos.db.users.has(ada.oid)).toBe(false);
+    });
+
+    it("requires at least one Category before the User is upserted", async () => {
+      const result = await actions.createPrompt(form({ title: "T", content: "C" }));
 
       expect(result).toEqual({ ok: false, error: "Invalid input" });
       expect(repos.db.users.has(ada.oid)).toBe(false);
@@ -86,20 +93,20 @@ describe("actions", () => {
 
   describe("input handling", () => {
     it("rejects arguments that are not FormData", async () => {
-      const result = await actions.createPrompt({ title: "T", content: "C", categoryId } as never);
+      const result = await actions.createPrompt({ title: "T", content: "C", categoryIds: [categoryId] } as never);
 
       expect(result).toEqual({ ok: false, error: "Invalid input" });
     });
 
     it("rejects repeated fields", async () => {
-      const data = form({ title: "T", content: "C", categoryId });
+      const data = form({ title: "T", content: "C", categoryIds: categoryId });
       data.append("title", "Another");
 
       expect(await actions.createPrompt(data)).toEqual({ ok: false, error: "Invalid input" });
     });
 
     it("rejects file uploads in place of text", async () => {
-      const data = form({ content: "C", categoryId });
+      const data = form({ content: "C", categoryIds: categoryId });
       data.append("title", new File(["x"], "x.txt"));
 
       expect(await actions.createPrompt(data)).toEqual({ ok: false, error: "Invalid input" });
@@ -111,7 +118,7 @@ describe("actions", () => {
     });
 
     it("treats an empty description as absent", async () => {
-      const result = await actions.createPrompt(form({ title: "T", content: "C", categoryId, description: "" }));
+      const result = await actions.createPrompt(form({ title: "T", content: "C", categoryIds: categoryId, description: "" }));
 
       expect(result.ok).toBe(true);
       expect([...repos.db.prompts.values()][0].description).toBeNull();
@@ -119,8 +126,22 @@ describe("actions", () => {
   });
 
   describe("prompts", () => {
+    it("accepts repeated Category fields and associates all selected Categories", async () => {
+      const secondCategoryId = repos.db.seedCategory({ name: "Other" }).id;
+      const data = form({ title: "T", content: "C" });
+      data.append("categoryIds", categoryId);
+      data.append("categoryIds", secondCategoryId);
+
+      const result = await actions.createPrompt(data);
+
+      expect(result.ok).toBe(true);
+      expect([...repos.db.prompts.values()][0]).toMatchObject({
+        categoryIds: [categoryId, secondCategoryId],
+      });
+    });
+
     it("creates a Prompt authored by the authenticated User and revalidates", async () => {
-      const result = await actions.createPrompt(form({ title: "T", content: "C", categoryId }));
+      const result = await actions.createPrompt(form({ title: "T", content: "C", categoryIds: categoryId }));
 
       expect(result.ok).toBe(true);
       const stored = [...repos.db.prompts.values()];
@@ -131,7 +152,7 @@ describe("actions", () => {
 
     it("ignores authorship and role fields sent by the client", async () => {
       const result = await actions.createPrompt(
-        form({ title: "T", content: "C", categoryId, authorOid: bob.oid, isAdministrator: "true" }),
+        form({ title: "T", content: "C", categoryIds: categoryId, authorOid: bob.oid, isAdministrator: "true" }),
       );
 
       expect(result.ok).toBe(true);
@@ -143,7 +164,7 @@ describe("actions", () => {
       const stored = repos.db.seedUser({ oid: ada.oid, displayName: ada.name });
       const prompt = repos.db.seedPrompt({ categoryId, authorOid: stored.oid, title: "Old" });
 
-      const result = await actions.updatePrompt(prompt.id, form({ title: "New", content: "C", categoryId }));
+      const result = await actions.updatePrompt(prompt.id, form({ title: "New", content: "C", categoryIds: categoryId }));
 
       expect(result.ok).toBe(true);
       expect(repos.db.prompts.get(prompt.id)?.title).toBe("New");
@@ -153,7 +174,7 @@ describe("actions", () => {
       repos.db.seedUser({ oid: bob.oid, displayName: bob.name });
       const prompt = repos.db.seedPrompt({ categoryId, authorOid: bob.oid, title: "Bob's" });
 
-      const result = await actions.updatePrompt(prompt.id, form({ title: "Mine now", content: "C", categoryId }));
+      const result = await actions.updatePrompt(prompt.id, form({ title: "Mine now", content: "C", categoryIds: categoryId }));
 
       expect(result).toEqual({ ok: false, error: "You are not allowed to do this" });
       expect(repos.db.prompts.get(prompt.id)?.title).toBe("Bob's");
@@ -263,7 +284,7 @@ describe("actions", () => {
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});
       principal = new Error("connection string password=hunter2");
 
-      const result = await actions.createPrompt(form({ title: "T", content: "C", categoryId }));
+      const result = await actions.createPrompt(form({ title: "T", content: "C", categoryIds: categoryId }));
 
       expect(result).toEqual({ ok: false, error: "Something went wrong" });
       expect(spy.mock.calls).toEqual([["Unexpected error:", "Error"]]);
@@ -273,7 +294,7 @@ describe("actions", () => {
 
   describe("every action", () => {
     const anyId = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
-    const promptForm = () => form({ title: "T", content: "C", categoryId });
+    const promptForm = () => form({ title: "T", content: "C", categoryIds: categoryId });
     const categoryForm = () => form({ name: "Sales", color: "#112233" });
     const forbidden = { ok: false, error: "You are not allowed to do this" };
 

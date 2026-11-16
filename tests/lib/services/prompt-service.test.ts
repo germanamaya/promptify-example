@@ -78,15 +78,27 @@ describe("PromptService", () => {
   });
 
   describe("create", () => {
+    it("associates every selected Category with the Prompt", async () => {
+      const secondCategory = repos.db.seedCategory({ name: "Other" });
+
+      const prompt = await service.create(author, {
+        title: "T",
+        content: "C",
+        categoryIds: [categoryId, secondCategory.id],
+      });
+
+      expect(prompt.categories.map(({ id }) => id)).toEqual([categoryId, secondCategory.id]);
+    });
+
     it("makes the current User the Author", async () => {
-      const prompt = await service.create(author, { title: "T", content: "C", categoryId });
+      const prompt = await service.create(author, { title: "T", content: "C", categoryIds: [categoryId] });
 
       expect(prompt.author.oid).toBe(author.oid);
       expect(repos.db.prompts.get(prompt.id)?.authorOid).toBe(author.oid);
     });
 
     it("ignores any authorOid smuggled into the input", async () => {
-      const input = { title: "T", content: "C", categoryId, authorOid: other.oid } as never;
+      const input = { title: "T", content: "C", categoryIds: [categoryId], authorOid: other.oid } as never;
 
       const prompt = await service.create(author, input);
 
@@ -94,17 +106,28 @@ describe("PromptService", () => {
     });
 
     it("rejects a Category that does not exist", async () => {
-      await expect(service.create(author, { title: "T", content: "C", categoryId: missingId })).rejects.toBeInstanceOf(
-        ValidationError,
-      );
+      await expect(service.create(author, { title: "T", content: "C", categoryIds: [missingId] })).rejects.toBeInstanceOf(ValidationError);
     });
   });
 
   describe("update", () => {
+    it("replaces the Prompt's Category associations", async () => {
+      const secondCategory = repos.db.seedCategory({ name: "Other" });
+      const stored = repos.db.seedPrompt({ categoryId, authorOid: author.oid });
+
+      const updated = await service.update(author, stored.id, {
+        title: "New",
+        content: "Body",
+        categoryIds: [secondCategory.id],
+      });
+
+      expect(updated.categories.map(({ id }) => id)).toEqual([secondCategory.id]);
+    });
+
     it("lets the Author edit and keeps the Author", async () => {
       const stored = repos.db.seedPrompt({ categoryId, authorOid: author.oid });
 
-      const updated = await service.update(author, stored.id, { title: "New", content: "Body", categoryId });
+      const updated = await service.update(author, stored.id, { title: "New", content: "Body", categoryIds: [categoryId] });
 
       expect(updated).toMatchObject({ title: "New", content: "Body" });
       expect(updated.author.oid).toBe(author.oid);
@@ -113,7 +136,7 @@ describe("PromptService", () => {
     it("forbids another User", async () => {
       const stored = repos.db.seedPrompt({ categoryId, authorOid: author.oid, title: "Mine" });
 
-      await expect(service.update(other, stored.id, { title: "Hacked", content: "x", categoryId })).rejects.toBeInstanceOf(
+      await expect(service.update(other, stored.id, { title: "Hacked", content: "x", categoryIds: [categoryId] })).rejects.toBeInstanceOf(
         ForbiddenError,
       );
       expect(repos.db.prompts.get(stored.id)?.title).toBe("Mine");
@@ -122,13 +145,13 @@ describe("PromptService", () => {
     it("forbids an Administrator who is not the Author", async () => {
       const stored = repos.db.seedPrompt({ categoryId, authorOid: author.oid });
 
-      await expect(service.update(admin, stored.id, { title: "x", content: "x", categoryId })).rejects.toBeInstanceOf(
+      await expect(service.update(admin, stored.id, { title: "x", content: "x", categoryIds: [categoryId] })).rejects.toBeInstanceOf(
         ForbiddenError,
       );
     });
 
     it("throws NotFound for a missing Prompt", async () => {
-      await expect(service.update(author, missingId, { title: "x", content: "x", categoryId })).rejects.toBeInstanceOf(
+      await expect(service.update(author, missingId, { title: "x", content: "x", categoryIds: [categoryId] })).rejects.toBeInstanceOf(
         NotFoundError,
       );
     });
@@ -137,7 +160,7 @@ describe("PromptService", () => {
       const stored = repos.db.seedPrompt({ categoryId, authorOid: author.oid });
 
       await expect(
-        service.update(author, stored.id, { title: "x", content: "x", categoryId: missingId }),
+        service.update(author, stored.id, { title: "x", content: "x", categoryIds: [missingId] }),
       ).rejects.toBeInstanceOf(ValidationError);
     });
   });

@@ -29,7 +29,13 @@ export async function PromptDetail({ params, searchParams, modal = false }: Prom
   }
   const prompt = result.data;
   const content = <>
-    <span className="category-badge"><span className="category-dot" style={{ backgroundColor: prompt.category.color }} />{prompt.category.name}</span>
+    <div className="category-badges">
+      {prompt.categories.map((category) => (
+        <span className="category-badge" key={category.name}>
+          <span className="category-dot" style={{ backgroundColor: category.color }} />{category.name}
+        </span>
+      ))}
+    </div>
     {!modal && <h1>{prompt.title}</h1>}
     {prompt.description && <p className="detail-description">{prompt.description}</p>}
     <p className="detail-author">Por {prompt.authorName} <span aria-hidden="true">·</span> <time dateTime={prompt.createdAt}>{new Intl.DateTimeFormat("es-ES", { dateStyle: "long", timeZone: "UTC" }).format(new Date(prompt.createdAt))}</time></p>

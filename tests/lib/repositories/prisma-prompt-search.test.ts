@@ -15,7 +15,7 @@ describe("Prisma Prompt search", () => {
     await repository.list({ q: "informe", categoryId: "category", offset: 12, limit: 12 });
 
     const where = {
-      categoryId: "category",
+      promptCategories: { some: { categoryId: "category" } },
       OR: [
         { title: { contains: "informe" } },
         { description: { contains: "informe" } },

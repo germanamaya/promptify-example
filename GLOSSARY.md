@@ -11,7 +11,7 @@ A single reusable piece of text with a title and descriptive metadata, written b
 _Avoid_: Template, snippet, instruction, shared prompt
 
 **Category**:
-A classification from a closed list maintained by Administrators; every Prompt belongs to exactly one Category. Each Category has a name and a Color.
+A classification from a closed list maintained by Administrators; every Prompt belongs to one or more Categories. Each Category has a name and a Color.
 _Avoid_: Folder, type, tag
 ### People
 

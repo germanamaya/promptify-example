@@ -13,9 +13,10 @@ export function PromptForm({ categories, prompt, returnHref = "/" }: {
   const router = useRouter();
   const [values, setValues] = useState({
     title: prompt?.title ?? "", description: prompt?.description ?? "",
-    categoryId: prompt?.categoryId ?? "", content: prompt?.content ?? "",
+    categoryIds: prompt?.categoryIds ?? [], content: prompt?.content ?? "",
   });
   const [error, submit, pending] = useActionState(async (_previous: string | null, form: FormData) => {
+    if (form.getAll("categoryIds").length === 0) return "Selecciona al menos una Categoría.";
     const result = prompt
       ? await updatePrompt(prompt.id, form).then((result) => result.ok ? { ok: true as const, data: { id: prompt.id } } : result)
       : await createPrompt(form);
@@ -48,14 +49,32 @@ export function PromptForm({ categories, prompt, returnHref = "/" }: {
         />
       </div>
       <div className="form-field">
-        <label htmlFor="categoryId">Categoría <span>Obligatoria</span></label>
-        <select
-          id="categoryId" name="categoryId" required value={values.categoryId}
-          onChange={(event) => setValues({ ...values, categoryId: event.target.value })}
-        >
-          <option value="" disabled>Elige una Categoría</option>
-          {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-        </select>
+        <fieldset className="category-options" aria-describedby="category-selection-help" aria-required="true">
+          <legend>Categorías <span>Obligatorio</span></legend>
+          <p id="category-selection-help" className="field-hint">Selecciona al menos una Categoría.</p>
+          <div className="category-choice-list">
+            {categories.map((category) => (
+              <label className="category-choice" key={category.id} htmlFor={`category-${category.id}`}>
+                <input
+                  id={`category-${category.id}`}
+                  type="checkbox"
+                  name="categoryIds"
+                  value={category.id}
+                  checked={values.categoryIds.includes(category.id)}
+                  aria-describedby="category-selection-help"
+                  onChange={(event) => setValues({
+                    ...values,
+                    categoryIds: event.target.checked
+                      ? [...values.categoryIds, category.id]
+                      : values.categoryIds.filter((id) => id !== category.id),
+                  })}
+                />
+                <span className="category-dot" style={{ backgroundColor: category.color }} aria-hidden="true" />
+                <span>{category.name}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
       </div>
       <div className="form-field">
         <label htmlFor="content">Contenido del Prompt <span>Obligatorio</span></label>

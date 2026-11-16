@@ -8,7 +8,7 @@ export type PromptListItemDto = {
   id: string;
   title: string;
   description: string | null;
-  category: { name: string; color: string };
+  categories: { name: string; color: string }[];
   authorName: string;
   createdAt: string;
 };
@@ -25,8 +25,8 @@ export type PromptDetailDto = {
   title: string;
   content: string;
   description: string | null;
-  categoryId: string;
-  category: { name: string; color: string };
+  categoryIds: string[];
+  categories: { name: string; color: string }[];
   authorName: string;
   createdAt: string;
   updatedAt: string;
@@ -47,7 +47,7 @@ export const toPromptListItemDto = (prompt: PromptRecord): PromptListItemDto => 
   id: prompt.id,
   title: prompt.title,
   description: prompt.description,
-  category: { name: prompt.category.name, color: prompt.category.color },
+  categories: prompt.categories.map(({ name, color }) => ({ name, color })),
   authorName: prompt.author.displayName,
   createdAt: prompt.createdAt.toISOString(),
 });
@@ -59,8 +59,8 @@ export function toPromptDetailDto(prompt: PromptRecord, viewer: CurrentUser): Pr
     title: prompt.title,
     content: prompt.content,
     description: prompt.description,
-    categoryId: prompt.category.id,
-    category: { name: prompt.category.name, color: prompt.category.color },
+    categoryIds: prompt.categories.map(({ id }) => id),
+    categories: prompt.categories.map(({ name, color }) => ({ name, color })),
     authorName: prompt.author.displayName,
     createdAt: prompt.createdAt.toISOString(),
     updatedAt: prompt.updatedAt.toISOString(),
