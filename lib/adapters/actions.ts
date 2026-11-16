@@ -1,11 +1,13 @@
 import "server-only";
 import { categoryInputSchema } from "@/lib/schemas/category";
 import { idSchema, oidSchema } from "@/lib/schemas/common";
+import { languageSchema } from "@/lib/schemas/language";
 import { promptInputSchema } from "@/lib/schemas/prompt";
 import { ValidationError } from "@/lib/errors";
 import type { AdministratorService } from "@/lib/services/administrator-service";
 import type { CategoryService } from "@/lib/services/category-service";
 import type { PromptService } from "@/lib/services/prompt-service";
+import type { UserRepository } from "@/lib/repositories/types";
 import { parseInput, readFormFields } from "./parse";
 import type { ActionRunner } from "./run-action";
 
@@ -15,9 +17,10 @@ const CATEGORY_FIELDS = ["name", "color"] as const;
 export function createActions(deps: {
   run: ActionRunner;
   revalidate: () => void;
+  users: UserRepository;
   services: { prompts: PromptService; categories: CategoryService; administrators: AdministratorService };
 }) {
-  const { run, revalidate, services } = deps;
+  const { run, revalidate, users, services } = deps;
 
   // Revalidates only after the service accepted the change.
   const mutation = async <T>(result: Promise<T>) => {
@@ -83,6 +86,12 @@ export function createActions(deps: {
       run(
         () => parseInput(oidSchema, oid),
         (user, targetOid) => mutation(services.administrators.demote(user, targetOid)),
+      ),
+
+    setUserLanguage: (language: unknown) =>
+      run(
+        () => parseInput(languageSchema, language),
+        (user, selectedLanguage) => mutation(users.setLanguagePreference(user.oid, selectedLanguage)),
       ),
   };
 }

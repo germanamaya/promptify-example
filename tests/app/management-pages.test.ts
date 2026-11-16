@@ -12,7 +12,7 @@ vi.mock("@/app/actions/administrators", () => ({ promoteAdministrator: vi.fn(), 
 
 describe("Management pages", () => {
   beforeEach(() => {
-    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada", isAdministrator: true } });
+    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada", isAdministrator: true, language: "en" } });
     queries.listCategories.mockResolvedValue({ ok: true, data: [{ id: "cat", name: "Análisis", color: "#123456" }] });
     queries.listUsers.mockResolvedValue({ ok: true, data: [
       { oid: "a0000000-0000-4000-8000-000000000001", name: "Ada", isAdministrator: true },
@@ -27,10 +27,10 @@ describe("Management pages", () => {
   it("renders Category creation, editing and removal plus role management", async () => {
     const { default: Administration } = await import("@/app/administration/page");
     const html = renderToStaticMarkup(await Administration());
-    for (const text of ["Administración", "Crear Categoría", "Guardar Categoría", "Eliminar Categoría", "Usuarios y roles", "Ada", "Bruno", "Usuario", "Administrador"]) {
+    for (const text of ["Administration", "Create Category", "Save Category", "Delete Category", "Users and roles", "Ada", "Bruno", "User", "Administrator"]) {
       expect(html).toContain(text);
     }
-    expect(html).toContain('<h2 id="roles-title">Usuarios y roles</h2>');
+    expect(html).toContain('<h2 id="roles-title">Users and roles</h2>');
     expect(html).not.toContain("OID del Usuario");
     expect(html).not.toContain("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx");
     expect(html).toContain('value="Análisis"');
@@ -38,11 +38,11 @@ describe("Management pages", () => {
   });
 
   it("blocks non-Administrators before reading management data", async () => {
-    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada", isAdministrator: false } });
+    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada", isAdministrator: false, language: "en" } });
     const { default: Administration } = await import("@/app/administration/page");
     const html = renderToStaticMarkup(await Administration());
     expect(html).toContain('role="alert"');
-    expect(html).not.toContain("Asignar rol");
+    expect(html).not.toContain("Assign Administrator");
     expect(queries.listCategories).not.toHaveBeenCalled();
     expect(queries.listUsers).not.toHaveBeenCalled();
   });
@@ -55,7 +55,7 @@ describe("Management pages", () => {
     expect(html).toContain('value="Título existente"');
     expect(html).toContain("Descripción existente");
     expect(html).toContain("&lt;b&gt;Texto literal&lt;/b&gt;");
-    expect(html).toContain("Guardar cambios");
+    expect(html).toContain("Save changes");
     expect(html).toContain('/prompts/id?from=%2F%3Fq%3Dinforme');
   });
 
@@ -65,7 +65,7 @@ describe("Management pages", () => {
     const { default: Edit } = await import("@/app/prompts/[id]/edit/page");
     const html = renderToStaticMarkup(await Edit({ params: Promise.resolve({ id: "id" }) }));
     expect(html).toContain('role="alert"');
-    expect(html).not.toContain("Guardar cambios");
+    expect(html).not.toContain("Save changes");
   });
 
   it.each(["https://example.com", "//example.com", ["/", "/?q=x"]].map((from) => ({ from })))("rejects unsafe edit return locations: %j", async ({ from }) => {
@@ -74,7 +74,7 @@ describe("Management pages", () => {
       params: Promise.resolve({ id: "id" }), searchParams: Promise.resolve({ from }),
     }));
     expect(html).toContain('role="alert"');
-    expect(html).not.toContain("Guardar cambios");
+    expect(html).not.toContain("Save changes");
   });
 
   it("uses the same Category name limit as the server schema", async () => {

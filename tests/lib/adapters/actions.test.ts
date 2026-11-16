@@ -46,6 +46,7 @@ describe("actions", () => {
     actions = createActions({
       run,
       revalidate,
+      users: repos.users,
       services: {
         prompts: new PromptService({ prompts: repos.prompts, categories: repos.categories }),
         categories: new CategoryService({ categories: repos.categories }),
@@ -96,6 +97,33 @@ describe("actions", () => {
       const result = await actions.createPrompt({ title: "T", content: "C", categoryIds: [categoryId] } as never);
 
       expect(result).toEqual({ ok: false, error: "Invalid input" });
+    });
+
+    describe("language preference", () => {
+      it("stores the selected language for the authenticated User and revalidates", async () => {
+        const result = await actions.setUserLanguage("pt-PT");
+
+        expect(result).toEqual({ ok: true, data: undefined });
+        expect(repos.db.users.get(ada.oid)?.language).toBe("pt-PT");
+        expect(revalidate).toHaveBeenCalled();
+      });
+
+      it("rejects unsupported languages before upserting the User", async () => {
+        const result = await actions.setUserLanguage("fr");
+
+        expect(result).toEqual({ ok: false, error: "Invalid input" });
+        expect(repos.db.users.has(ada.oid)).toBe(false);
+      });
+
+      it("rejects an unauthenticated language change without writing", async () => {
+        principal = new UnauthenticatedError();
+
+        const result = await actions.setUserLanguage("es");
+
+        expect(result).toEqual({ ok: false, error: "Authentication required" });
+        expect(repos.db.users.has(ada.oid)).toBe(false);
+        expect(revalidate).not.toHaveBeenCalled();
+      });
     });
 
     it("rejects repeated fields", async () => {
@@ -307,6 +335,7 @@ describe("actions", () => {
       ["deleteCategory", () => actions.deleteCategory(anyId)],
       ["promoteAdministrator", () => actions.promoteAdministrator(anyId)],
       ["demoteAdministrator", () => actions.demoteAdministrator(anyId)],
+      ["setUserLanguage", () => actions.setUserLanguage("es")],
     ];
 
     it.each(calls)("%s rejects a missing principal without touching the database", async (_name, call) => {

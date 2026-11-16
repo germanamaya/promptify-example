@@ -7,6 +7,7 @@ import { PromptForm } from "@/app/components/prompt-form";
 import { ReadError } from "@/app/components/read-error";
 import { PromptModal } from "./prompt-modal";
 import type { PromptRouteProps } from "./prompt-detail";
+import { T } from "./locale-provider";
 
 export async function PromptCreator({ searchParams, modal = false }: Pick<PromptRouteProps, "searchParams"> & { modal?: boolean } = {}) {
   await connection();
@@ -14,7 +15,7 @@ export async function PromptCreator({ searchParams, modal = false }: Pick<Prompt
   const validFrom = from === undefined || (typeof from === "string" && (from === "/" || from.startsWith("/?")));
   const libraryHref = validFrom && typeof from === "string" ? from : "/";
   const failure = (error: string) => modal
-    ? <PromptModal title="Crear Prompt" libraryHref={libraryHref}><ReadError error={error} /></PromptModal>
+    ? <PromptModal title={<T id="library.create" />} libraryHref={libraryHref}><ReadError error={error} /></PromptModal>
     : <ReadError error={error} />;
   if (!validFrom) return failure("Invalid input");
   const { queries } = getContainer();
@@ -22,16 +23,16 @@ export async function PromptCreator({ searchParams, modal = false }: Pick<Prompt
   if (!me.ok) return failure(me.error);
   if (!categories.ok) return failure(categories.error);
   const content = <>
-    {!modal && <h1>Tu próximo Prompt puede ayudar a alguien.</h1>}
-    <p className="detail-description">Comparte lo que te funciona. Tú serás su Autor y podrás editarlo.</p>
+    {!modal && <h1><T id="prompt.createHeading" /></h1>}
+    <p className="detail-description"><T id="prompt.createTagline" /></p>
     {categories.data.length > 0
       ? <PromptForm categories={categories.data} returnHref={libraryHref} />
-      : <section className="empty-state"><h2>Necesitamos una Categoría para empezar</h2><p>Pide a un Administrador que cree una Categoría antes de publicar tu primer Prompt.</p><Link className="button button-secondary" href={libraryHref} scroll={false}>Volver a la biblioteca</Link></section>}
+      : <section className="empty-state"><h2><T id="prompt.noCategoryTitle" /></h2><p><T id="prompt.noCategoryDescription" /></p><Link className="button button-secondary" href={libraryHref} scroll={false}><T id="prompt.backLibrary" /></Link></section>}
   </>;
-  if (modal) return <PromptModal title="Crear Prompt" libraryHref={libraryHref}>{content}</PromptModal>;
+  if (modal) return <PromptModal title={<T id="library.create" />} libraryHref={libraryHref}>{content}</PromptModal>;
   return (
     <div className="supporting-page">
-      <header className="supporting-header"><Brand /><Link className="text-link" href={libraryHref}><Icon name="back" /> Biblioteca</Link></header>
+      <header className="supporting-header"><Brand /><Link className="text-link" href={libraryHref}><Icon name="back" /> <T id="nav.library" /></Link></header>
       <main className="creation-content">{content}</main>
     </div>
   );

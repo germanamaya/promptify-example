@@ -11,6 +11,7 @@ model User {
   oid             String   @id @db.NVarChar(36)
   displayName     String   @db.NVarChar(200)
   isAdministrator Boolean  @default(false)
+  language        String   @default("en") @db.NVarChar(5)
   prompts         Prompt[]
 }
 

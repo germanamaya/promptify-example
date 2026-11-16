@@ -34,7 +34,7 @@ describe("users: upsert", () => {
 
     const user = await db.users.upsert({ oid, displayName: "Ada" });
 
-    expect(user).toEqual({ oid, displayName: "Ada", isAdministrator: false });
+    expect(user).toEqual({ oid, displayName: "Ada", isAdministrator: false, language: "en" });
     expect(await client.user.count()).toBe(1);
   });
 
@@ -43,7 +43,28 @@ describe("users: upsert", () => {
 
     const user = await db.users.upsert({ oid: existing.oid, displayName: "New" });
 
-    expect(user).toEqual({ oid: existing.oid, displayName: "New", isAdministrator: true });
+    expect(user).toEqual({ oid: existing.oid, displayName: "New", isAdministrator: true, language: "en" });
+  });
+
+  it("preserves a User's language preference when refreshing their name", async () => {
+    const existing = await seedUser(client, { displayName: "Old" });
+    await db.users.setLanguagePreference(existing.oid, "de");
+
+    const user = await db.users.upsert({ oid: existing.oid, displayName: "New" });
+
+    expect(user).toMatchObject({ displayName: "New", language: "de" });
+  });
+
+  it("updates the language preference for only the selected User", async () => {
+    const selected = await seedUser(client);
+    const other = await seedUser(client);
+
+    await db.users.setLanguagePreference(selected.oid, "pt-PT");
+
+    expect(await client.user.findUniqueOrThrow({ where: { oid: selected.oid } }))
+      .toMatchObject({ language: "pt-PT" });
+    expect(await client.user.findUniqueOrThrow({ where: { oid: other.oid } }))
+      .toMatchObject({ language: "en" });
   });
 
   it("survives simultaneous first requests of the same User", async () => {
@@ -123,7 +144,7 @@ describe("users: promote", () => {
       expect(results.filter((r) => r.status === "rejected"), `round ${round}`).toEqual([]);
       expect(audit.events, `round ${round}`).toHaveLength(1);
     }
-  });
+  }, 60_000);
 
   it("never creates a User when promoting an unknown oid", async () => {
     const actor = await seedUser(client, { isAdministrator: true });

@@ -4,8 +4,8 @@ import { CategoryService } from "@/lib/services/category-service";
 import type { CurrentUser } from "@/lib/services/types";
 import { createFakeRepositories } from "../../fakes/repositories";
 
-const admin: CurrentUser = { oid: "a0000000-0000-4000-8000-000000000001", name: "Admin", isAdministrator: true };
-const user: CurrentUser = { oid: "b0000000-0000-4000-8000-000000000002", name: "User", isAdministrator: false };
+const admin: CurrentUser = { oid: "a0000000-0000-4000-8000-000000000001", name: "Admin", isAdministrator: true, language: "en" };
+const user: CurrentUser = { oid: "b0000000-0000-4000-8000-000000000002", name: "User", isAdministrator: false, language: "en" };
 
 describe("CategoryService", () => {
   let repos: ReturnType<typeof createFakeRepositories>;

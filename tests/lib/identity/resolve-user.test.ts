@@ -10,7 +10,7 @@ describe("resolveUser", () => {
 
     const user = await resolveUser(users, { oid, name: "Ada" });
 
-    expect(user).toEqual({ oid, name: "Ada", isAdministrator: false });
+    expect(user).toEqual({ oid, name: "Ada", isAdministrator: false, language: "en" });
     expect(db.users.size).toBe(1);
   });
 
@@ -20,7 +20,16 @@ describe("resolveUser", () => {
 
     const user = await resolveUser(users, { oid, name: "New" });
 
-    expect(user).toEqual({ oid, name: "New", isAdministrator: true });
+    expect(user).toEqual({ oid, name: "New", isAdministrator: true, language: "en" });
+  });
+
+  it("keeps the language preference stored for the User", async () => {
+    const { users, db } = createFakeRepositories();
+    db.seedUser({ oid, displayName: "Ada", language: "it" });
+
+    const user = await resolveUser(users, { oid, name: "Ada" });
+
+    expect(user.language).toBe("it");
   });
 
   it("keeps a single User across repeated requests", async () => {

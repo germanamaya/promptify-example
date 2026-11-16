@@ -7,7 +7,7 @@ import { Icon } from "@/app/components/ui-icon";
 describe("Pixel Art identity", () => {
   it("keeps the home link accessible and renders a pixel-grid mark", () => {
     const html = renderToStaticMarkup(createElement(Brand));
-    expect(html).toContain('aria-label="Promptify, inicio"');
+    expect(html).toContain('aria-label="Promptify, home"');
     expect(html).toContain('href="/"');
     expect(html).toContain('shape-rendering="crispEdges"');
     expect(html).not.toContain('rx="10"');

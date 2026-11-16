@@ -169,7 +169,7 @@ describe("queries", () => {
   it("returns the current User", async () => {
     principal = root;
 
-    expect(await queries.getMe()).toEqual({ ok: true, data: { name: "Root", isAdministrator: true } });
+    expect(await queries.getMe()).toEqual({ ok: true, data: { name: "Root", isAdministrator: true, language: "en" } });
   });
 
   it("rejects repeated or non-object search params", async () => {

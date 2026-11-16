@@ -76,4 +76,5 @@ export const asCurrentUser = (user: { oid: string; displayName: string; isAdmini
   oid: user.oid,
   name: user.displayName,
   isAdministrator: user.isAdministrator,
+  language: "en",
 });

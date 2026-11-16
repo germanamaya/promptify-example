@@ -35,7 +35,7 @@ describe("Promptify home", () => {
     container.mockImplementation(() => ({ queries }));
     queries.listPrompts.mockResolvedValue({ ok: true, data: { items: [prompt], total: 25, page: 2, pageSize: 12 } });
     queries.listCategories.mockResolvedValue({ ok: true, data: [{ id: categoryId, name: "Análisis", color: "#123456" }] });
-    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada", isAdministrator: false } });
+    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada", isAdministrator: false, language: "en" } });
   });
 
   it("waits for a real request before initializing the database container", async () => {
@@ -51,7 +51,7 @@ describe("Promptify home", () => {
   it("renders real contributions as escaped text and links to their detail", async () => {
     const html = await render();
     expect(html).toContain("Promptify");
-    expect(html).toContain("Biblioteca");
+    expect(html).toContain("Library");
     expect(html).toContain("Convierte los datos");
     expect(html).toContain("Marketing");
     expect(html).toContain("Análisis");
@@ -84,48 +84,48 @@ describe("Promptify home", () => {
 
   it("distinguishes no matches from an empty library", async () => {
     queries.listPrompts.mockResolvedValue({ ok: true, data: { items: [], total: 0, page: 1, pageSize: 12 } });
-    expect(await render({ q: "inexistente" })).toContain("No encontramos");
-    expect(await render()).toContain("El primer Prompt");
+    expect(await render({ q: "inexistente" })).toContain("No Prompts match");
+    expect(await render()).toContain("Your first Prompt");
   });
 
   it("shows failed reads explicitly rather than an empty success state", async () => {
     queries.listPrompts.mockResolvedValue({ ok: false, error: "Something went wrong" });
     const html = await render();
     expect(html).toContain('role="alert"');
-    expect(html).toContain("No pudimos");
-    expect(html).not.toContain("El primer Prompt");
+    expect(html).toContain("could not load");
+    expect(html).not.toContain("Your first Prompt");
   });
 
   it("does not render a library when authentication fails", async () => {
     queries.getMe.mockResolvedValue({ ok: false, error: "Authentication required" });
     const html = await render();
-    expect(html).toContain("sesión");
+    expect(html).toContain("session");
     expect(html).not.toContain(prompt.description);
   });
 
   it("does not silently accept duplicate search parameters", async () => {
     queries.listPrompts.mockResolvedValue({ ok: false, error: "Invalid input" });
-    expect(await render({ q: ["a", "b"] })).toContain("filtros");
+    expect(await render({ q: ["a", "b"] })).toContain("filters");
   });
 
   it("uses a compact working directory instead of a promotional discovery panel", async () => {
     const html = await render();
     expect(html).not.toContain("discovery-panel");
-    expect(html).not.toContain("Descubre tu próxima");
+    expect(html).not.toContain("Discover your next");
     expect(html).toContain('class="prompt-list"');
-    expect(html).toContain('aria-label="Filtrar por Categoría"');
+    expect(html).toContain('aria-label="Categories"');
     expect(html).toContain('role="status"');
   });
 
   it("offers logout through the Easy Auth endpoint to every User", async () => {
     const html = await render();
     expect(html).toContain('href="/.auth/logout"');
-    expect(html).toContain("Cerrar sesión");
+    expect(html).toContain("Sign out");
   });
 
   it("makes administration discoverable only for Administrators", async () => {
     expect(await render()).not.toContain('href="/administration"');
-    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada", isAdministrator: true } });
+    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada", isAdministrator: true, language: "en" } });
     expect(await render()).toContain('href="/administration"');
   });
 });

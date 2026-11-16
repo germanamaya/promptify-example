@@ -1,4 +1,5 @@
 import "server-only";
+import type { Language } from "@/lib/i18n/messages";
 import type { CategoryRecord, PromptRecord, UserRecord } from "@/lib/repositories/types";
 import type { CurrentUser } from "@/lib/services/types";
 
@@ -34,7 +35,7 @@ export type PromptDetailDto = {
   canDelete: boolean;
 };
 
-export type MeDto = { name: string; isAdministrator: boolean };
+export type MeDto = { name: string; isAdministrator: boolean; language: Language };
 export type AdministratorUserDto = { oid: string; name: string; isAdministrator: boolean };
 
 export const toCategoryDto = (category: CategoryRecord): CategoryDto => ({
@@ -69,7 +70,11 @@ export function toPromptDetailDto(prompt: PromptRecord, viewer: CurrentUser): Pr
   };
 }
 
-export const toMeDto = (user: CurrentUser): MeDto => ({ name: user.name, isAdministrator: user.isAdministrator });
+export const toMeDto = (user: CurrentUser): MeDto => ({
+  name: user.name,
+  isAdministrator: user.isAdministrator,
+  language: user.language,
+});
 
 export const toAdministratorUserDto = (user: UserRecord): AdministratorUserDto => ({
   oid: user.oid,

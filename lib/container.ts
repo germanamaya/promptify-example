@@ -38,6 +38,7 @@ function build() {
   return {
     actions: createActions({
       run,
+      users,
       services,
       // No cached scope ever holds identity or roles; this refreshes every route after a change.
       revalidate: () => revalidatePath("/", "layout"),

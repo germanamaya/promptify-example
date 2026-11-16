@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { ConflictError } from "@/lib/errors";
+import type { Language } from "@/lib/i18n/messages";
 import type {
   CategoryRecord,
   CategoryRepository,
@@ -30,7 +31,7 @@ export class FakeDb {
   clock = () => new Date();
 
   seedUser(user: Partial<UserRecord> & { oid: string }): UserRecord {
-    const record = { displayName: `User ${user.oid}`, isAdministrator: false, ...user };
+    const record = { displayName: `User ${user.oid}`, isAdministrator: false, language: "en", ...user };
     this.users.set(record.oid, record);
     return record;
   }
@@ -175,9 +176,15 @@ export class FakeUserRepository implements UserRepository {
 
   async upsert(data: { oid: string; displayName: string }) {
     const existing = this.db.users.get(data.oid);
-    const record = { isAdministrator: false, ...existing, displayName: data.displayName, oid: data.oid };
+    const record = { isAdministrator: false, language: "en", ...existing, displayName: data.displayName, oid: data.oid };
     this.db.users.set(data.oid, record);
     return record;
+  }
+
+  async setLanguagePreference(oid: string, language: Language) {
+    const user = this.db.users.get(oid);
+    if (!user) throw new Error("User not found");
+    user.language = language;
   }
 
   async promote(oid: string, beforeCommit: () => Promise<void>): Promise<PromoteResult> {

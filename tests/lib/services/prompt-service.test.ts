@@ -5,9 +5,9 @@ import type { CurrentUser } from "@/lib/services/types";
 import { createFakeRepositories } from "../../fakes/repositories";
 
 const missingId = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
-const author: CurrentUser = { oid: "a0000000-0000-4000-8000-000000000001", name: "Author", isAdministrator: false };
-const other: CurrentUser = { oid: "b0000000-0000-4000-8000-000000000002", name: "Other", isAdministrator: false };
-const admin: CurrentUser = { oid: "c0000000-0000-4000-8000-000000000003", name: "Admin", isAdministrator: true };
+const author: CurrentUser = { oid: "a0000000-0000-4000-8000-000000000001", name: "Author", isAdministrator: false, language: "en" };
+const other: CurrentUser = { oid: "b0000000-0000-4000-8000-000000000002", name: "Other", isAdministrator: false, language: "en" };
+const admin: CurrentUser = { oid: "c0000000-0000-4000-8000-000000000003", name: "Admin", isAdministrator: true, language: "en" };
 
 describe("PromptService", () => {
   let repos: ReturnType<typeof createFakeRepositories>;

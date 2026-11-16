@@ -11,7 +11,7 @@ vi.mock("next/server", () => ({ connection: vi.fn().mockResolvedValue(undefined)
 
 describe("Prompt supporting flows", () => {
   beforeEach(() => {
-    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada", isAdministrator: false } });
+    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada", isAdministrator: false, language: "en" } });
     queries.listCategories.mockResolvedValue({ ok: true, data: [{ id: "cat", name: "Análisis", color: "#123456" }] });
     queries.getPrompt.mockResolvedValue({
       ok: true,
@@ -23,10 +23,10 @@ describe("Prompt supporting flows", () => {
     const html = renderToStaticMarkup(await Detail({ params: Promise.resolve({ id: "id" }) }));
     expect(queries.getPrompt).toHaveBeenCalledWith("id");
     expect(html).toContain("&lt;b&gt;Texto literal&lt;/b&gt;");
-    expect(html).toContain("Copiar Prompt");
+    expect(html).toContain("Copy Prompt");
     expect(html).not.toContain("<b>Texto literal</b>");
-    expect(html).not.toContain("Editar Prompt");
-    expect(html).not.toContain("Eliminar Prompt");
+    expect(html).not.toContain("Edit Prompt");
+    expect(html).not.toContain("Delete Prompt");
   });
 
   it("renders every Category on the Prompt detail", async () => {
@@ -56,16 +56,16 @@ describe("Prompt supporting flows", () => {
       searchParams: Promise.resolve({ from: "/?q=informe&page=2" }),
     }));
     expect(html).toContain('/prompts/id/edit?from=%2F%3Fq%3Dinforme%26page%3D2');
-    expect(html).toContain("Editar Prompt");
-    expect(html).toContain("Eliminar Prompt");
+    expect(html).toContain("Edit Prompt");
+    expect(html).toContain("Delete Prompt");
   });
 
   it("allows an Administrator to delete but not edit another Author's Prompt", async () => {
     const result = await queries.getPrompt();
     queries.getPrompt.mockResolvedValue({ ...result, data: { ...result.data, canDelete: true } });
     const html = renderToStaticMarkup(await Detail({ params: Promise.resolve({ id: "id" }) }));
-    expect(html).not.toContain("Editar Prompt");
-    expect(html).toContain("Eliminar Prompt");
+    expect(html).not.toContain("Edit Prompt");
+    expect(html).toContain("Delete Prompt");
   });
 
   it("returns explicitly to the originating library filters and page", async () => {
@@ -84,7 +84,7 @@ describe("Prompt supporting flows", () => {
         searchParams: Promise.resolve({ from }),
       }));
       expect(html).toContain('role="alert"');
-      expect(html).toContain("filtros");
+      expect(html).toContain("filters");
     },
   );
 
@@ -94,15 +94,15 @@ describe("Prompt supporting flows", () => {
       expect(html).toContain(`name="${field}"`);
     }
     expect(html).toContain('type="checkbox"');
-    expect(html).toContain("secretos");
-    expect(html).toContain("datos personales");
-    expect(html).toContain("Publicar Prompt");
+    expect(html).toContain("secrets");
+    expect(html).toContain("personal data");
+    expect(html).toContain("Publish Prompt");
   });
 
   it("explains that a Category is required instead of offering a broken form", async () => {
     queries.listCategories.mockResolvedValue({ ok: true, data: [] });
     const html = renderToStaticMarkup(await NewPrompt());
-    expect(html).toContain("Administrador");
-    expect(html).not.toContain("Publicar Prompt");
+    expect(html).toContain("Administrator");
+    expect(html).not.toContain("Publish Prompt");
   });
 });

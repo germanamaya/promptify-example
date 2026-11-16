@@ -1,9 +1,11 @@
 import "server-only";
+import type { Language } from "@/lib/i18n/messages";
 
 export type UserRecord = {
   oid: string;
   displayName: string;
   isAdministrator: boolean;
+  language: string;
 };
 
 export type CategoryRecord = {
@@ -63,6 +65,7 @@ export interface UserRepository {
   findByOid(oid: string): Promise<UserRecord | null>;
   // Never changes isAdministrator of an existing User.
   upsert(data: { oid: string; displayName: string }): Promise<UserRecord>;
+  setLanguagePreference(oid: string, language: Language): Promise<void>;
   // `beforeCommit` runs inside the same unit of work; if it throws, the promotion is rolled back.
   promote(oid: string, beforeCommit: () => Promise<void>): Promise<PromoteResult>;
   // Atomic: the last Administrator is never demoted.

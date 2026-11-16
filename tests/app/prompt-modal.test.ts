@@ -14,7 +14,7 @@ const props = () => ({
 
 describe("URL-backed Prompt modals", () => {
   beforeEach(() => {
-    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada" } });
+    queries.getMe.mockResolvedValue({ ok: true, data: { name: "Ada", isAdministrator: false, language: "en" } });
     queries.getPrompt.mockResolvedValue({ ok: true, data: {
       id: "id", title: "Un Prompt", content: "<b>Texto literal</b>", description: "Descripción",
       categoryIds: ["cat"], categories: [{ name: "Análisis", color: "#123456" }], authorName: "Ada",
@@ -27,8 +27,8 @@ describe("URL-backed Prompt modals", () => {
     const { default: Create } = await import("@/app/@modal/(.)prompts/new/page");
     const html = renderToStaticMarkup(await Create({ searchParams: props().searchParams }));
     expect(html).toContain('<dialog');
-    expect(html).toContain("Crear Prompt");
-    expect(html).toContain("Publicar Prompt");
+    expect(html).toContain("Create Prompt");
+    expect(html).toContain("Publish Prompt");
     expect(queries.getMe).toHaveBeenCalled();
     expect(queries.getPrompt).not.toHaveBeenCalled();
     expect(html).toContain('href="/?q=informe&amp;categoryId=cat&amp;page=2"');
@@ -39,7 +39,7 @@ describe("URL-backed Prompt modals", () => {
     const { default: Create } = await import("@/app/@modal/(.)prompts/new/page");
     const html = renderToStaticMarkup(await Create({}));
     expect(html).toContain('role="alert"');
-    expect(html).not.toContain("Publicar Prompt");
+    expect(html).not.toContain("Publish Prompt");
   });
 
   it("explains missing Categories inside creation instead of showing an unusable form", async () => {
@@ -47,8 +47,8 @@ describe("URL-backed Prompt modals", () => {
     const { default: Create } = await import("@/app/@modal/(.)prompts/new/page");
     const html = renderToStaticMarkup(await Create({}));
     expect(html).toContain('<dialog');
-    expect(html).toContain("Necesitamos una Categoría");
-    expect(html).not.toContain("Publicar Prompt");
+    expect(html).toContain("A Category is needed");
+    expect(html).not.toContain("Publish Prompt");
   });
 
   it("provides a streaming loading boundary for the parallel modal slot", async () => {
@@ -65,8 +65,8 @@ describe("URL-backed Prompt modals", () => {
     expect(html).toContain('<dialog');
     expect(html).toContain('aria-labelledby="prompt-modal-title"');
     expect(html).toContain('id="prompt-modal-title"');
-    expect(html).toContain('aria-label="Cerrar Prompt"');
-    for (const action of ["Copiar Prompt", "Editar Prompt", "Eliminar Prompt"]) {
+    expect(html).toContain('aria-label="Close Prompt"');
+    for (const action of ["Copy Prompt", "Edit Prompt", "Delete Prompt"]) {
       expect(html).toContain(`aria-label="${action}"`);
       expect(html).toContain(`title="${action}"`);
     }
@@ -81,8 +81,8 @@ describe("URL-backed Prompt modals", () => {
     queries.getPrompt.mockResolvedValue({ ...result, data: { ...result.data, canEdit: false, canDelete: false } });
     const { default: Detail } = await import("@/app/@modal/(.)prompts/[id]/page");
     const html = renderToStaticMarkup(await Detail(props()));
-    expect(html).not.toContain('aria-label="Editar Prompt"');
-    expect(html).not.toContain('aria-label="Eliminar Prompt"');
+    expect(html).not.toContain('aria-label="Edit Prompt"');
+    expect(html).not.toContain('aria-label="Delete Prompt"');
   });
 
   it("edits existing values in the dialog and keeps the originating library URL", async () => {
@@ -92,7 +92,7 @@ describe("URL-backed Prompt modals", () => {
     expect(html).toContain('id="prompt-modal-title"');
     expect(html).toContain('value="Un Prompt"');
     expect(html).toContain("&lt;b&gt;Texto literal&lt;/b&gt;");
-    expect(html).toContain("Guardar cambios");
+    expect(html).toContain("Save changes");
     expect(html).toContain('name="categoryIds"');
     expect(html).toContain('name="categoryIds" checked="" value="cat"');
     expect(html).toContain('/prompts/id?from=%2F%3Fq%3Dinforme%26categoryId%3Dcat%26page%3D2');
@@ -106,7 +106,7 @@ describe("URL-backed Prompt modals", () => {
     const html = renderToStaticMarkup(await Edit(props()));
     expect(html).toContain('<dialog');
     expect(html).toContain('role="alert"');
-    expect(html).not.toContain("Guardar cambios");
+    expect(html).not.toContain("Save changes");
     expect(queries.listCategories).not.toHaveBeenCalled();
   });
 
@@ -115,7 +115,7 @@ describe("URL-backed Prompt modals", () => {
     const { default: Detail } = await import("@/app/@modal/(.)prompts/[id]/page");
     const html = renderToStaticMarkup(await Detail(props()));
     expect(html).toContain('<dialog');
-    expect(html).toContain('aria-label="Cerrar Prompt"');
+    expect(html).toContain('aria-label="Close Prompt"');
     expect(html).toContain('role="alert"');
   });
 

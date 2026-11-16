@@ -1,5 +1,7 @@
 import "server-only";
 import { Prisma } from "@/lib/generated/prisma/client";
+import { DEFAULT_LANGUAGE } from "@/lib/i18n/messages";
+import type { Language } from "@/lib/i18n/messages";
 import type { DemoteResult, PromoteResult, UserRecord, UserRepository } from "@/lib/repositories/types";
 import type { PrismaClient } from "./client";
 import { mapPrismaError, withSerializableRetry } from "./errors";
@@ -23,7 +25,7 @@ export class PrismaUserRepository implements UserRepository {
       try {
         return await this.client.user.upsert({
           where: { oid: data.oid },
-          create: { oid: data.oid, displayName: data.displayName, isAdministrator: false },
+          create: { oid: data.oid, displayName: data.displayName, isAdministrator: false, language: DEFAULT_LANGUAGE },
           update: { displayName: data.displayName },
         });
       } catch (error) {
@@ -32,6 +34,10 @@ export class PrismaUserRepository implements UserRepository {
         throw mapPrismaError(error);
       }
     }
+  }
+
+  async setLanguagePreference(oid: string, language: Language): Promise<void> {
+    await this.client.user.update({ where: { oid }, data: { language } });
   }
 
   async promote(oid: string, beforeCommit: () => Promise<void>): Promise<PromoteResult> {

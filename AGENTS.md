@@ -55,3 +55,9 @@ Rules:
 - [GLOSSARY.md](./GLOSSARY.md) defines the canonical domain vocabulary of Promptify.
 - Always use its terms in code (models, routes, variables), UI text, and conversation. Never use the words listed under _Avoid_.
 - Do not edit GLOSSARY.md; it is maintained by the project owner.
+
+## Internationalization
+- Translate all new or modified user-facing UI text into every supported language (`en`, `es`, `it`, `pt-PT`, `de`) using the existing localization system in `lib/i18n/messages.ts`. Do not hardcode user-facing strings in components.
+- This includes buttons, labels, placeholders, validation and error messages, empty and loading states, dialogs, accessibility text, and metadata.
+- Do not translate user-authored content, including Prompts.
+- Add or update tests to verify the translations.
